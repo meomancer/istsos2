@@ -97,7 +97,10 @@ def render(DS,sosConfig):
         constraint =  et.SubElement(time, "{%s}constraint" % ns['swe'])
         allowedTimes =  et.SubElement(constraint, "{%s}AllowedTimes" % ns['swe'])
         interval = et.SubElement(allowedTimes, "{%s}interval" % ns['swe'])
-        interval.text = "%s %s" %(DS.stime.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), DS.etime.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
+        begin = et.SubElement(interval, "{%s}begin" % ns['swe'])
+        begin.text = DS.stime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        end = et.SubElement(interval, "{%s}end" % ns['swe'])
+        end.text = DS.etime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     if DS.procedureType=="insitu-mobile-point": # Adding 3d coordinates observation
 
@@ -252,6 +255,54 @@ def render(DS,sosConfig):
     root = tree.getroot()
     root.attrib["xmlns"]="http://www.opengis.net/sensorML/1.0.1"
     root.attrib["version"]="1.0.1"
+
+    # TODO:
+    #  Specifically for IGRAC
+    #--- Update well information ---#
+    for index, field in enumerate(DS.sensorProperties):
+        name = tree.find("{%s}member/{%s}System/{%s}name" % (ns['sml'], ns['sml'], ns['gml']))
+        name.text = field['name']
+        id = tree.find("{%s}member/{%s}System/{%s}identification/{%s}IdentifierList/{%s}identifier/{%s}Term/{%s}value" % (ns['sml'], ns['sml'], ns['sml'], ns['sml'], ns['sml'], ns['sml'], ns['sml']))
+        id.text = field['ggis_uid']
+        point = tree.find("{%s}member/{%s}System/{%s}location/{%s}Point" % (ns['sml'], ns['sml'], ns['sml'], ns['gml']))
+        point.attrib["{%s}id" % ns['gml']] = field['original_id']
+        location = tree.find("{%s}member/{%s}System/{%s}location" % (ns['sml'], ns['sml'], ns['sml']))
+        if field['country']:
+            country = et.SubElement(location, "{%s}country" % ns["gml"])
+            country.text = f"{field['country']}"
+
+        coordinates = tree.find("{%s}member/{%s}System/{%s}location/{%s}Point/{%s}coordinates" % (ns['sml'], ns['sml'], ns['sml'], ns['gml'], ns['gml']))
+        # if field['elevation_value']:
+        #     coordinates.text = f"{field['longitude']},{field['latitude']},{field['elevation_value']}"
+        # else:
+        #     coordinates.text = f"{field['longitude']},{field['latitude']}"
+        #
+        # # TODO: WE COMMENT THIS TO ASK FIRST
+        latitude = et.SubElement(coordinates, "{%s}latitude" % ns["gml"])
+        latitude.text = f"{field['latitude']}"
+        longitude = et.SubElement(coordinates, "{%s}longitude" % ns["gml"])
+        longitude.text = f"{field['longitude']}"
+        elevation = et.SubElement(coordinates, "{%s}elevation" % ns["gml"])
+        value = et.SubElement(elevation, "{%s}value" % ns["gml"])
+        value.text = f"{field['elevation_value'] if field['elevation_value'] else ''}"
+        unit = et.SubElement(elevation, "{%s}unit" % ns["gml"])
+        unit.text = f"{field['elevation_unit'] if field['elevation_unit'] else ''}"
+
+        license = tree.find("{%s}member/{%s}System/{%s}License" % (ns['sml'], ns['sml'], ns['gml']))
+        if 'license' in field and field['license']:
+            el = et.SubElement(license, "{%s}name" % ns["gml"])
+            el.text = f"{field['license']}"
+            el = et.SubElement(license, "{%s}description" % ns["gml"])
+            el.text = f"{field['license_desc']}"
+
+        restriction = tree.find("{%s}member/{%s}System/{%s}Restriction" % (ns['sml'], ns['sml'], ns['gml']))
+        if 'restriction_code_type_desc' in field and field['restriction_code_type_desc']:
+            el = et.SubElement(restriction, "{%s}description" % ns["gml"])
+            el.text = f"{field['restriction_code_type_desc']}"
+            el = et.SubElement(restriction, "{%s}other" % ns["gml"])
+            el.text = f"{field['constraints_other']}"
+
+
     return b'<?xml version="1.0" encoding="UTF-8"?>' + et.tostring(root)
 
 

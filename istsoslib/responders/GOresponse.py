@@ -916,7 +916,7 @@ class Observation:
         sqlObsPro = "SELECT id_pro, id_opr, name_opr, def_opr, name_uom FROM %s.observed_properties, %s.proc_obs, %s.uoms" %(filter.sosConfig.schema,filter.sosConfig.schema,filter.sosConfig.schema)
         sqlObsPro += " WHERE id_opr_fk=id_opr AND id_uom_fk=id_uom AND id_prc_fk=%s" %(row["id_prc"])
         sqlObsPro += " AND ("
-        sqlObsPro += " OR ".join(["def_opr SIMILAR TO '%(:|)" + str(i) + "(:|)%'" for i in filter.observedProperty])
+        sqlObsPro += " OR ".join(["def_opr='" + str(i) + "'" for i in filter.observedProperty])
         sqlObsPro += " ) ORDER BY id_pro ASC"
         try:
             obspr_res = pgdb.select(sqlObsPro)
@@ -1034,7 +1034,7 @@ class Observation:
 
                 # Set SQL JOINS
                 join_txt = """
-                    LEFT JOIN (
+                    JOIN (
                         SELECT
                             A%s.id_msr,
                             A%s.val_msr,
@@ -1048,7 +1048,7 @@ class Observation:
                         FROM
                             %s.measures A%s
                         WHERE
-                            A%s.id_pro_fk = %s
+                            A%s.id_pro_fk = '%s'
                 """ % (
                     filter.sosConfig.schema, idx,
                     idx, obspr_row["id_pro"]
@@ -1155,9 +1155,10 @@ class Observation:
                 sqlData += " OR ".join(etf)
                 sqlData +=  ")\n"
 
-            else:
-                # Get last observed measuement
-                sqlData += " AND et.time_eti = (SELECT max(time_eti) FROM %s.event_time WHERE id_prc_fk=%s) " %(filter.sosConfig.schema,row["id_prc"])
+            # TODO: IGRAC Custom
+            # else:
+            #     # Get last observed measuement
+            #     sqlData += " AND et.time_eti = (SELECT max(time_eti) FROM %s.event_time WHERE id_prc_fk=%s) " %(filter.sosConfig.schema,row["id_prc"])
 
             # Quality index filtering
             if (
@@ -1431,7 +1432,7 @@ class GetObservationResponse:
             opr_sel = "SELECT def_opr FROM %s.observed_properties WHERE " %(filter.sosConfig.schema,)
             opr_sel_w = []
             for op in filter.observedProperty:
-                opr_sel_w += ["def_opr SIMILAR TO '%%(:|)%s(:|)%%'" %(op)]
+                opr_sel_w += ["def_opr = '%s'" %(op)]
 
             opr_sel = opr_sel + " OR ".join(opr_sel_w)
             try:
@@ -1439,7 +1440,6 @@ class GetObservationResponse:
 
             except:
                 raise Exception("SQL: %s"%(opr_sel))
-
             if not len(opr_filtered)>0:
                 raise sosException.SOSException("InvalidParameterValue","observedProperty","Parameter \"observedProperty\" sent with invalid value: %s - available options: %s"%(filter.observedProperty,opl))
 

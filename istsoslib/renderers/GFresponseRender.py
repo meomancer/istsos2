@@ -21,14 +21,17 @@
 #
 # ===============================================================================
 import isodate as iso
+from lxml import etree as et
 #import sosConfig
 
 def render(GF,sosConfig):
-    r = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    r = ""
     if GF.type.lower()=="station" or GF.type.lower()=="point":
         r += "<sa:SamplingPoint \n"
     elif GF.type=="surface":
         r += "<sa:SamplingSurface \n"
+    else:
+        r += "<sa:SamplingPoint \n"
     r += "gml:id=\"" + GF.name + "\" \n"
     r += "xmlns:sa=\"http://www.opengis.net/sampling/1.0\" \n"
     r += "xmlns:swe=\"http://www.opengis.net/swe/1.0.1\" \n"
@@ -104,5 +107,8 @@ def render(GF,sosConfig):
         r += "</sa:SamplingPoint> \n"
     elif GF.type=="surface":
         r += "</sa:SamplingSurface> \n"
-    
-    return r
+    else:
+        r += "</sa:SamplingPoint> \n"
+    tree = et.ElementTree(et.fromstring(r))
+    root = tree.getroot()
+    return b'<?xml version="1.0" encoding="UTF-8"?>' + et.tostring(root)

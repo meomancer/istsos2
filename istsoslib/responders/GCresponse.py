@@ -271,7 +271,8 @@ def BuildfeatureOfInterestList(pgdb,sosConfig):
     except:
         raise Exception("sql: %s" %(pgdb.mogrify(sql)))
     for row in rows:
-        list.append(sosConfig.urn["feature"] + row["nfoi"])
+        if row["nfoi"]:
+            list.append(sosConfig.urn["feature"] + row["nfoi"])
     return list
 
 def BuildOffEnvelope(pgdb,id,sosConfig):
@@ -423,7 +424,8 @@ def BuildOffFoiList(pgdb,id,sosConfig):
     except:
         raise Exception("sql: %s" %(pgdb.mogrify(sql,params)))
     for row in rows:
-        list.append(sosConfig.urn["feature"] + row["fois"])
+        if row["fois"]:
+            list.append(sosConfig.urn["feature"] + row["fois"])
     return list
 
 def BuildSensorList(pgdb,sosConfig):
@@ -843,10 +845,10 @@ class GetCapabilitiesResponse():
     def __init__(self,fil,pgdb):
         
         self.version = fil.version
-        
-        
+
+
         if "all" in fil.sections:
-            
+
             if self.version == '2.0.0':
                 self.ObservationOfferingList = ObservationOfferingList_2_0_0(pgdb,fil.sosConfig)
                 
@@ -864,7 +866,7 @@ class GetCapabilitiesResponse():
             self.FilterCapabilities = True
                 
         else:
-            
+
             if "contents" in fil.sections:
                 if self.version == '2.0.0':
                     self.ObservationOfferingList = ObservationOfferingList_2_0_0(pgdb,fil.sosConfig)

@@ -57,10 +57,10 @@ class foi:
         self.geom=""
         
         #select foi
-        sql  = "SELECT id_foi, name_foi, desc_foi, ST_AsGml(ST_Transform(geom_foi,%s)) as geom, name_fty" #%(filter.srsName)
+        sql  = f"SELECT id_foi, name_foi, desc_foi, ST_AsGml(ST_Transform(geom_foi,{filter.srsName})) as geom, name_fty"
         sql += " FROM %s.foi, %s.feature_type" %(filter.sosConfig.schema,filter.sosConfig.schema)
         sql += " WHERE id_fty_fk=id_fty AND name_foi=%s" #%(filter.featureOfInterest)
-        params = (filter.srsName,str(filter.featureOfInterest))
+        params = (str(filter.featureOfInterest),)
         try:
             foi = pgdb.select(sql,params)[0]
         except:
@@ -75,7 +75,7 @@ class foi:
         sql  = "SELECT id_prc, name_prc, name_oty "
         sql += "FROM %s.procedures, %s.foi, %s.obs_type " %(filter.sosConfig.schema,filter.sosConfig.schema,filter.sosConfig.schema)
         sql += "WHERE id_foi_fk=id_foi AND id_oty=id_oty_fk AND name_foi=%s " #%(filter.featureOfInterest)
-        sql += "ORDER BY name_prc " 
+        sql += "ORDER BY name_prc "
         params = (str(filter.featureOfInterest),)
         try:
             prc = pgdb.select(sql,params)
@@ -90,7 +90,7 @@ class foi:
             sql = "SELECT name_opr "
             sql += " FROM %s.procedures, %s.proc_obs, %s.observed_properties" %(filter.sosConfig.schema,filter.sosConfig.schema,filter.sosConfig.schema)
             sql += " WHERE id_prc=id_prc_fk AND id_opr=id_opr_fk AND name_prc=%s" #%(p["name_prc"])
-            sql += " ORDER BY name_opr" 
+            sql += " ORDER BY name_opr"
             params = (p["name_prc"],)
             try:
                 obs = pgdb.select(sql,params)
@@ -112,7 +112,7 @@ class foi:
             for st in samplTime:
                 samplTimeArr.append([st['firstet'],st['lastet']])
             self.samplingTime.append(samplTimeArr)
-            
+
         
         
         
