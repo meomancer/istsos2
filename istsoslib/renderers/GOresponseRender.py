@@ -195,7 +195,13 @@ def XMLformat(GO):
         r += "        </swe:encoding>\n"
 
         if ob.csv:
-            r += "        <swe:values>%s</swe:values>" % ob.csv
+            values = ''
+            for row in ob.csv.split('@'):
+                val = row.split(',')
+                values += f'           <swe:value dateTime="{val[0]}">{val[1]}</swe:value>\n'
+            r += "        <swe:values>\n"
+            r += values
+            r += "        </swe:values>\n"
 
         elif len(ob.data) > 0:
             data=[]
