@@ -131,7 +131,7 @@ class DescribeSensorResponse:
         fields = [
             'longitude', 'latitude', 'elevation_value', 'elevation_unit',
             'original_id', 'ggis_uid', 'name', 'id', 'country', 'license',
-            'restriction_code_type', 'constraints_other'
+            'restriction_code_type', 'constraints_other', 'organisation'
         ]
 
         sqlProc = f"SELECT {','.join(fields)} from {filter.sosConfig.schema}.vw_istsos_sensor WHERE original_id='{filter.procedure}' LIMIT 1 "
@@ -160,11 +160,13 @@ class DescribeSensorResponse:
                     if gdb:
                         if field == 'license' and row[field]:
                             licenses = gdb.select(
-                                f'SELECT name, description from base_license where id={row[field]}',
+                                f'SELECT name, description, abbreviation from base_license where id={row[field]}',
                                 {}
                             )
                             try:
                                 license = licenses[0]
+                                if result['organisation']:
+                                    row['summary'] = f'This data was made available by {result["organisation"]} under the {license[2]} license.'
                                 row[field] = license[0]
                                 row['license_desc'] = license[1]
                             except IndexError:

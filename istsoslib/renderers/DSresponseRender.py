@@ -290,6 +290,9 @@ def render(DS,sosConfig):
 
         license = tree.find("{%s}member/{%s}System/{%s}License" % (ns['sml'], ns['sml'], ns['gml']))
         if 'license' in field and field['license']:
+            if 'summary' in field and field['summary']:
+                el = et.SubElement(license, "{%s}summary" % ns["gml"])
+                el.text = f"{field['summary']}"
             el = et.SubElement(license, "{%s}name" % ns["gml"])
             el.text = f"{field['license']}"
             el = et.SubElement(license, "{%s}description" % ns["gml"])
