@@ -36,7 +36,7 @@ from operator import add
 from dateutil.parser import parse
 
 from istsoslib import sosException
-
+from ..utils import escape
 
 date_handler = lambda obj: (
     obj.isoformat()

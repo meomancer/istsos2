@@ -25,6 +25,7 @@ import os
 import sys
 import importlib
 from istsoslib.filters import DS_filter
+from ..utils import escape
 
 class ServiceIdentification:
     """Service identification of the GetCapabilities responseFormat
@@ -369,7 +370,7 @@ def BuildOffProcList(pgdb,id,sosConfig):
         raise Exception("sql: %s" %(pgdb.mogrify(sql,params)))
     for row in rows:
         #list.append(sosConfig.urn["procedure"] + row["name_prc"])
-        list.append(row["name_prc"])
+        list.append(escape(row["name_prc"]))
     return list
 
 def BuildOffObsPrList(pgdb,id,sosConfig):
@@ -425,7 +426,7 @@ def BuildOffFoiList(pgdb,id,sosConfig):
         raise Exception("sql: %s" %(pgdb.mogrify(sql,params)))
     for row in rows:
         if row["fois"]:
-            list.append(sosConfig.urn["feature"] + row["fois"])
+            list.append(sosConfig.urn["feature"] + escape(row["fois"]))
     return list
 
 def BuildSensorList(pgdb,sosConfig):

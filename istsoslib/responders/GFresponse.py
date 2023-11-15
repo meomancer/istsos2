@@ -29,7 +29,8 @@ import sys
 from istsoslib import sosDatabase
 #from SOS.config import mimetype
 from istsoslib import sosException
-           
+from ..utils import escape
+
 class foi:
     """The Feature of interest object
 
@@ -66,7 +67,7 @@ class foi:
         except:
             raise sosException.SOSException("InvalidParameterValue","FeatureOfInterestId","FeatureOfInterestId: Feature of Interest '%s' not found."%(filter.featureOfInterest))
         
-        self.name=foi["name_foi"]
+        self.name=escape(foi["name_foi"])
         self.desc=foi["desc_foi"]
         self.type=foi["name_fty"]
         self.geom=foi["geom"]
@@ -83,7 +84,7 @@ class foi:
             raise Exception("GFresponse, SQL: %s"%(pgdb.mogrify(sql,params)))        
         
         for p in prc:
-            self.procedures.append(p["name_prc"])
+            self.procedures.append(escape(p["name_prc"]))
             self.obsType.append(p["name_oty"])
             self.idPrc.append(p["id_prc"])
             # select obesrved properties of aa given procedure

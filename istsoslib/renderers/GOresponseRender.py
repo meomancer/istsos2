@@ -27,6 +27,8 @@ import hashlib
 import sys
 import datetime
 
+from ..utils import escape
+
 date_handler = lambda obj: (
     obj.isoformat()
     if isinstance(obj, (datetime.datetime, datetime.date))
@@ -103,7 +105,7 @@ def XMLformat(GO):
             r += "    <om:samplingTime/>\n"
         
         #PROCEDURE
-        r += "    <om:procedure xlink:href=\"" + ob.procedure + "\"/>\n"                
+        r += "    <om:procedure xlink:href=\"" + escape(ob.procedure) + "\"/>\n"
         
         #PROPRIETA OSSERVATA
         if ob.procedureType == "insitu-mobile-point":
@@ -128,7 +130,7 @@ def XMLformat(GO):
         r += "    </om:observedProperty>\n"      
     
         #FEATURE OF INTEREST
-        r += "    <om:featureOfInterest xlink:href=\"" + ob.foi_urn + "\">\n"
+        r += "    <om:featureOfInterest xlink:href=\"" + escape(ob.foi_urn) + "\">\n"
         r += "      <gml:FeatureCollection>\n"
         r += "        <gml:location>\n"
         r += "          " + ob.foiGml + "\n"
