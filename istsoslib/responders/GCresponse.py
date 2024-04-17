@@ -301,6 +301,11 @@ def BuildOffEnvelope(pgdb,id,sosConfig):
     #----------------
     sql += " ) u"
     params=(id,id)
+
+    # TODO:
+    #  igrac specified
+    sql = "SELECT ST_asgml(Box2D(location)) as ext FROM mv_well"
+    params=None
     try:
         rows=pgdb.select(sql,params)
     except:
