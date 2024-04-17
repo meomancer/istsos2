@@ -215,7 +215,7 @@ class VirtualProcess(ABC):
                 raise Exception("Database error: %s - %s" % (sql, e))
 
             self.samplingTime = (result[0], result[1])
-    
+
     def getProceduresFromOffering(self, offering):
         sql = """
             SELECT id_prc, name_prc, st_z(geom_foi), array_agg(def_opr)
@@ -252,7 +252,7 @@ class VirtualProcess(ABC):
 
         except Exception as e:
             raise Exception("Database error: %s - %s" % (sql, e))
-    
+
     def getData(self, procedure=None, disableAggregation=True):
         """Return the observations of associated procedure
 
@@ -413,7 +413,7 @@ class VirtualProcessProfile(VirtualProcess):
         sql += """
             WHERE id_foi = p3.id_foi_fk AND name_off = \'%s\' AND name_prc = \'%s\'
             """ % (offering, self.filter.procedure[0])
-        
+
         try:
             result = self.pgdb.select(sql)
             self.procedures = {}
@@ -665,6 +665,10 @@ def BuildobservedPropertyList(pgdb,offering,sosConfig):
     sql += " %s.observed_properties, %s.off_proc o, %s.offerings" %(sosConfig.schema,sosConfig.schema,sosConfig.schema)
     sql += " WHERE id_opr_fk=id_opr AND p.id_prc_fk=id_prc AND o.id_prc_fk=id_prc AND id_off=id_off_fk"
     sql += " AND name_off='%s' ORDER BY p.id_pro" %(offering)
+
+    # TODO:
+    #  IGRAC SPECIALIZED
+    sql = f"select distinct(def_opr) as nopr from istsos.observed_properties"
     rows=pgdb.select(sql)
     for row in rows:
         list.append(row["nopr"])
@@ -1078,7 +1082,7 @@ class Observation:
                     filter.srsName,
                     filter.srsName
                 )
-                
+
                 if self.qualityIndex==True:
                     join_txt += ", Ax.id_qi_fk as posqi\n"
 
@@ -1339,9 +1343,9 @@ class Observation:
 
             try:
                 a = datetime.datetime.now()
-                self.data = pgdb.select(sql)
 
                 if 'text/plain' == filter.responseFormat:
+                    self.data = pgdb.select(sql)
                     self.csv = pgdb.to_string(csv_sql)
 
                 elif filter.responseFormat in [
@@ -1349,6 +1353,9 @@ class Observation:
                     "text/xml"
                 ]:
                     self.csv = pgdb.to_string(csv_sql, lineterminator='@')
+                    self.data = []
+                else:
+                    self.data = pgdb.select(sql)
 
             except Exception as xx:
                 print(traceback.print_exc(), file=sys.stderr)
@@ -1470,7 +1477,6 @@ class GetObservationResponse:
         else:
             self.reqTZ = pytz.utc
             pgdb.setTimeTZ("UTC")
-
 
 
         # BUILD PROCEDURES LIST
