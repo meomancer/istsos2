@@ -116,7 +116,9 @@ class DescribeSensorResponse:
         if not os.path.isfile(self.smlFile):
             raise Exception("SensorML file for procedure '%s' not found!" % (filter.procedure))
 
-        sqlProc = "SELECT def_opr, name_opr, desc_opr, constr_pro, name_uom, id_pro"
+        # TODO:
+        #   IGRAC specified
+        sqlProc = "SELECT def_opr, name_opr, desc_opr, constr_pro, name_uom, id_pro, po.begin_measurement as begin, po.end_measurement as end"
         sqlProc += " FROM %s.observed_properties opr, %s.proc_obs po," % (filter.sosConfig.schema, filter.sosConfig.schema)
         sqlProc += " %s.procedures pr, %s.uoms um" % (filter.sosConfig.schema, filter.sosConfig.schema)
         sqlProc += " WHERE opr.id_opr=po.id_opr_fk AND pr.id_prc=po.id_prc_fk AND um.id_uom = po.id_uom_fk"

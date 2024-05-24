@@ -130,6 +130,12 @@ def render(DS,sosConfig):
         if not (field["name_uom"]=="" or field["name_uom"]==None or field["name_uom"]=="NULL"):
             uom = et.SubElement(quantity,"{%s}uom" % ns["swe"])
             uom.attrib["code"] = field["name_uom"]
+
+        interval = et.SubElement(quantity, "{%s}interval" % ns['swe'])
+        begin = et.SubElement(interval, "{%s}begin" % ns['swe'])
+        begin.text = field['begin'].strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        end = et.SubElement(interval, "{%s}end" % ns['swe'])
+        end.text = field['end'].strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         """
         if not (field["desc_opr"]=="" or field["desc_opr"]==None or field["desc_opr"]=="NULL"):
             description = et.SubElement(quantity,"{%s}description" % ns["swe"])
