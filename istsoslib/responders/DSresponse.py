@@ -131,9 +131,11 @@ class DescribeSensorResponse:
 
         # SPECIFICALLY FOR IGRAC SENSOR
         fields = [
-            'longitude', 'latitude', 'elevation_value', 'elevation_unit',
+            'longitude', 'photo', 'latitude', 'elevation_value', 'elevation_unit',
             'original_id', 'ggis_uid', 'name', 'id', 'country', 'license',
-            'restriction_code_type', 'constraints_other', 'organisation'
+            'restriction_code_type', 'constraints_other', 'organisation',
+            'manager', 'aquifer_name', 'aquifer_material', 'aquifer_type',
+            'aquifer_thickness', 'confinement'
         ]
 
         sqlProc = f"SELECT {','.join(fields)} from {filter.sosConfig.schema}.vw_istsos_sensor WHERE original_id='{filter.procedure}' LIMIT 1 "
