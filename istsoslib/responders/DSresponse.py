@@ -116,7 +116,9 @@ class DescribeSensorResponse:
         if not os.path.isfile(self.smlFile):
             raise Exception("SensorML file for procedure '%s' not found!" % (filter.procedure))
 
-        sqlProc = "SELECT def_opr, name_opr, desc_opr, constr_pro, name_uom, id_pro"
+        # TODO:
+        #   IGRAC specified
+        sqlProc = "SELECT def_opr, name_opr, desc_opr, constr_pro, name_uom, id_pro, po.begin_measurement as begin, po.end_measurement as end"
         sqlProc += " FROM %s.observed_properties opr, %s.proc_obs po," % (filter.sosConfig.schema, filter.sosConfig.schema)
         sqlProc += " %s.procedures pr, %s.uoms um" % (filter.sosConfig.schema, filter.sosConfig.schema)
         sqlProc += " WHERE opr.id_opr=po.id_opr_fk AND pr.id_prc=po.id_prc_fk AND um.id_uom = po.id_uom_fk"
@@ -129,9 +131,11 @@ class DescribeSensorResponse:
 
         # SPECIFICALLY FOR IGRAC SENSOR
         fields = [
-            'longitude', 'latitude', 'elevation_value', 'elevation_unit',
+            'longitude', 'photo', 'latitude', 'elevation_value', 'elevation_unit',
             'original_id', 'ggis_uid', 'name', 'id', 'country', 'license',
-            'restriction_code_type', 'constraints_other', 'organisation'
+            'restriction_code_type', 'constraints_other', 'organisation',
+            'manager', 'aquifer_name', 'aquifer_material', 'aquifer_type',
+            'aquifer_thickness', 'confinement'
         ]
 
         sqlProc = f"SELECT {','.join(fields)} from {filter.sosConfig.schema}.vw_istsos_sensor WHERE original_id='{filter.procedure}' LIMIT 1 "
