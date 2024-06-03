@@ -105,10 +105,6 @@ class DescribeSensorResponse:
 
         # clean up the procedure name to produce a valid file name
         filename = filter.procedure
-        valid_chars = "-_.()'\"<> %s%s" % (string.ascii_letters, string.digits)
-        for c in filename:
-            if not c in valid_chars:
-                raise Exception("procedure name '%s' is not a valid: use only letters or digits!"%(filter.procedure))
         filename += '.xml'
 
         self.smlFile = os.path.join(filter.sosConfig.sensorMLpath, 'well.xml')
