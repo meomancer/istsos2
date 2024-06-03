@@ -1105,6 +1105,8 @@ class Observation:
             # Set WHERE CLAUSES
             sqlData = " ".join(joinar)
             sqlData += " WHERE et.id_prc_fk=%s\n" %(row["id_prc"])
+            if not multi_obs:
+                sqlData += f""" AND  et.id_pro_fk = '{obspr_row["id_pro"]}'"""
 
             # Set FILTER ON RESULT (OGC:COMPARISON)
             if filter.result:
