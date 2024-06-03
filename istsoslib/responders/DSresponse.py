@@ -105,10 +105,6 @@ class DescribeSensorResponse:
 
         # clean up the procedure name to produce a valid file name
         filename = filter.procedure
-        valid_chars = "-_.()'\"<> %s%s" % (string.ascii_letters, string.digits)
-        for c in filename:
-            if not c in valid_chars:
-                raise Exception("procedure name '%s' is not a valid: use only letters or digits!"%(filter.procedure))
         filename += '.xml'
 
         self.smlFile = os.path.join(filter.sosConfig.sensorMLpath, 'well.xml')
@@ -118,11 +114,7 @@ class DescribeSensorResponse:
 
         # TODO:
         #   IGRAC specified
-        sqlProc = "SELECT def_opr, name_opr, desc_opr, constr_pro, name_uom, id_pro, po.begin_measurement as begin, po.end_measurement as end"
-        sqlProc += " FROM %s.observed_properties opr, %s.proc_obs po," % (filter.sosConfig.schema, filter.sosConfig.schema)
-        sqlProc += " %s.procedures pr, %s.uoms um" % (filter.sosConfig.schema, filter.sosConfig.schema)
-        sqlProc += " WHERE opr.id_opr=po.id_opr_fk AND pr.id_prc=po.id_prc_fk AND um.id_uom = po.id_uom_fk"
-        sqlProc += " AND name_prc = %s ORDER BY id_pro"
+        sqlProc = "SELECT * FROM istsos.observed_properties_sensor WHERE name_prc = %s"
         params = (str(filter.procedure),)
         try:
             self.observedProperties = pgdb.select(sqlProc, params)
