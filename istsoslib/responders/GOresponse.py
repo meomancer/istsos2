@@ -988,21 +988,27 @@ class Observation:
 
             valeFieldName = []
             qi_field_name = []
+
+            multi_obs = len(obspr_res) > 1
+
             for idx, obspr_row in enumerate(obspr_res):
+                key = f'C{idx}'
+                if not multi_obs:
+                    key = 'et'
+
                 if self.qualityIndex==True:
 
                     cols += [
-                        "C%s.val_msr as c%s_v" % (idx, idx),
-                        "COALESCE(C%s.id_qi_fk, %s) as c%s_qi" % (
-                            idx,
+                        "%s.val_msr as %s_v" % (key, key),
+                        "COALESCE(%s.id_qi_fk, %s) as %s_qi" % (
+                            key,
                             filter.aggregate_nodata_qi,
-                            idx
+                            key
                         )
                     ]
                     csv_sql_cols += [
-                        #"C%s.val_msr" % idx,
-                        "COALESCE(C%s.val_msr, %s)" % (idx, filter.aggregate_nodata),
-                        "COALESCE(C%s.id_qi_fk, %s)" % (idx, filter.aggregate_nodata_qi)
+                        "COALESCE(%s.val_msr, %s)" % (key, filter.aggregate_nodata),
+                        "COALESCE(%s.id_qi_fk, %s)" % (key, filter.aggregate_nodata_qi)
                     ]
 
                     valeFieldName.append("c%s_v" %(idx))
@@ -1010,134 +1016,90 @@ class Observation:
                     qi_field_name.append("C%s.id_qi_fk" %(idx))
 
                 else:
-                    cols.append("C%s.val_msr as c%s_v" %(idx,idx))
-                    csv_sql_cols.append("C%s.val_msr" %(idx))
-                    valeFieldName.append("c%s_v" %(idx))
+                    cols.append("%s.val_msr as c%s_v" %(key,idx))
+                    csv_sql_cols.append("%s.val_msr" %(key))
+                    valeFieldName.append("%s_v" %(key))
 
                 # If Aggregatation funtion is set
                 if filter.aggregate_interval != None:
                     # This accept only numeric results
                     aggrCols.append(
-                        "COALESCE(%s(nullif(dt.c%s_v, 'NaN')),'%s')" % (
+                        "COALESCE(%s(nullif(dt.%s_v, 'NaN')),'%s')" % (
                             filter.aggregate_function,
-                            idx,
+                            key,
                             filter.aggregate_nodata
                         )
                     )
                     csv_aggr_cols.append(
-                        "COALESCE(%s(nullif(dt.c%s_v, 'NaN')),'%s')" % (
+                        "COALESCE(%s(nullif(dt.%s_v, 'NaN')),'%s')" % (
                             filter.aggregate_function,
-                            idx,
+                            key,
                             filter.aggregate_nodata
                         )
                     )
                     if self.qualityIndex==True:
-                        aggrCols.append("COALESCE(MIN(dt.c%s_qi),%s) as c%s_qi\n" % (
-                            idx,
+                        aggrCols.append("COALESCE(MIN(dt.%s_qi),%s) as %s_qi\n" % (
+                            key,
                             filter.aggregate_nodata_qi,
-                            idx
+                            key
                         ))
-                        csv_aggr_cols.append("COALESCE(MIN(dt.c%s_qi),%s)" % (
-                            idx,
+                        csv_aggr_cols.append("COALESCE(MIN(dt.%s_qi),%s)" % (
+                            key,
                             filter.aggregate_nodata_qi
                         ))
 
-                    aggrNotNull.append(" c%s_v > -900 " %(idx))
+                    aggrNotNull.append(" %s_v > -900 " %(key))
 
-                # Set SQL JOINS
-                join_txt = """
-                    JOIN (
-                        SELECT
-                            A%s.id_msr,
-                            A%s.val_msr,
-                            A%s.id_eti_fk
-                """ % (idx, idx, idx)
+                if multi_obs:
+                    # Set SQL JOINS
+                    join_txt = """
+                        JOIN (
+                            SELECT
+                                A%s.id_msr,
+                                A%s.val_msr,
+                                A%s.id_eti_fk
+                    """ % (idx, idx, idx)
 
-                if self.qualityIndex==True:
-                    join_txt += ", A%s.id_qi_fk\n" %(idx)
+                    if self.qualityIndex==True:
+                        join_txt += ", A%s.id_qi_fk\n" %(idx)
 
-                join_txt += """
-                        FROM
-                            %s.measures A%s
-                        WHERE
-                            A%s.id_pro_fk = '%s'
-                """ % (
-                    filter.sosConfig.schema, idx,
-                    idx, obspr_row["id_pro"]
-                )
+                    join_txt += """
+                            FROM
+                                %s.measures A%s
+                            WHERE
+                                A%s.id_pro_fk = '%s'
+                    """ % (
+                        filter.sosConfig.schema, idx,
+                        idx, obspr_row["id_pro"]
+                    )
 
-                # ATTENTION: HERE -999 VALUES ARE EXCLUDED WHEN ASKING AN AGGREAGATE FUNCTION
-                if filter.aggregate_interval != None: # >> Should be removed because measures data is not inserted if there is a nodata value
-                    join_txt += " AND A%s.val_msr > -900 " % idx
+                    # ATTENTION: HERE -999 VALUES ARE EXCLUDED WHEN ASKING AN AGGREAGATE FUNCTION
+                    if filter.aggregate_interval != None: # >> Should be removed because measures data is not inserted if there is a nodata value
+                        join_txt += " AND A%s.val_msr > -900 " % idx
 
-                # close SQL JOINS
-                join_txt += " ) as C%s\n" %(idx)
-                join_txt += " on C%s.id_eti_fk = et.id_eti" %(idx)
-                joinar.append(join_txt)
+                    # close SQL JOINS
+                    join_txt += " ) as C%s\n" %(idx)
+                    join_txt += " on C%s.id_eti_fk = et.id_eti" %(idx)
+                    joinar.append(join_txt)
 
-            # If MOBILE PROCEDURE
-            if self.procedureType=="insitu-mobile-point":
-                join_txt = """
-                    LEFT JOIN (
-                        SELECT
-                            Ax.id_pos,
-                            st_X(ST_Transform(Ax.geom_pos,%s)) as x,
-                            st_Y(ST_Transform(Ax.geom_pos,%s)) as y,
-                            st_Z(ST_Transform(Ax.geom_pos,%s)) as z,
-                            Ax.id_eti_fk
-                """ %(
-                    filter.srsName,
-                    filter.srsName,
-                    filter.srsName
-                )
-
-                if self.qualityIndex==True:
-                    join_txt += ", Ax.id_qi_fk as posqi\n"
-
-                join_txt += """
-                    FROM
-                        %s.positions Ax,
-                        %s.event_time Bx
-                    WHERE
-                        Ax.id_eti_fk = Bx.id_eti
-                    AND
-                        Bx.id_prc_fk = %s
-                """ %(
-                    filter.sosConfig.schema,
-                    filter.sosConfig.schema,
-                    row["id_prc"]
-                )
-
-                join_txt += " ) as Cx on Cx.id_eti_fk = et.id_eti\n"
-                cols.extend([
-                    "Cx.x as x",
-                    "Cx.y as y",
-                    "Cx.z as z"
-                ])
-                csv_sql_cols.extend([
-                    "Cx.x",
-                    "Cx.y",
-                    "Cx.z"
-                ])
-                if self.qualityIndex==True:
-                    cols.append("Cx.posqi")
-                    csv_sql_cols.append("Cx.posqi")
-
-                joinar.append(join_txt)
 
             # Set FROM CLAUSE
-            sqlSel += "%s FROM %s.event_time et" % (
-                ", ".join(cols), filter.sosConfig.schema
+            table = f'{filter.sosConfig.schema}.event_time'
+            if not multi_obs:
+                table = 'istsos.measures'
+
+            sqlSel += "%s FROM %s et" % (
+                ", ".join(cols), table
             )
 
             # Set FROM CLAUSE
-            csv_sql_sel += "%s FROM %s.event_time et" % (
+            csv_sql_sel += "%s FROM %s et" % (
                 (
                     ",".join(cols)
                     if filter.aggregate_interval != None
                     else " || ',' || ".join(csv_sql_cols)
                 ),
-                filter.sosConfig.schema
+                table
             )
 
             # Set WHERE CLAUSES
