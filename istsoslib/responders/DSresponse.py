@@ -114,11 +114,7 @@ class DescribeSensorResponse:
 
         # TODO:
         #   IGRAC specified
-        sqlProc = "SELECT def_opr, name_opr, desc_opr, constr_pro, name_uom, id_pro, po.begin_measurement as begin, po.end_measurement as end"
-        sqlProc += " FROM %s.observed_properties opr, %s.proc_obs po," % (filter.sosConfig.schema, filter.sosConfig.schema)
-        sqlProc += " %s.procedures pr, %s.uoms um" % (filter.sosConfig.schema, filter.sosConfig.schema)
-        sqlProc += " WHERE opr.id_opr=po.id_opr_fk AND pr.id_prc=po.id_prc_fk AND um.id_uom = po.id_uom_fk"
-        sqlProc += " AND name_prc = %s ORDER BY id_pro"
+        sqlProc = "SELECT * FROM istsos.describe_sensor WHERE name_prc = %s"
         params = (str(filter.procedure),)
         try:
             self.observedProperties = pgdb.select(sqlProc, params)
