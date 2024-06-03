@@ -114,7 +114,7 @@ class DescribeSensorResponse:
 
         # TODO:
         #   IGRAC specified
-        sqlProc = "SELECT * FROM istsos.describe_sensor WHERE name_prc = %s"
+        sqlProc = "SELECT * FROM istsos.observed_properties_sensor WHERE name_prc = %s"
         params = (str(filter.procedure),)
         try:
             self.observedProperties = pgdb.select(sqlProc, params)

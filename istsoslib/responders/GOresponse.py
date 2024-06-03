@@ -703,13 +703,21 @@ def BuildProcedureList(pgdb,offering,sosConfig):
 
     return list
 
+
+def BuildProcedureCount(pgdb,offering, procedures, sosConfig):
+    sql = "SELECT name_prc FROM %s.procedures, %s.off_proc, %s.offerings"  %(sosConfig.schema,sosConfig.schema,sosConfig.schema)
+    sql += f''' WHERE id_prc=id_prc_fk AND id_off=id_off_fk AND name_off='{offering}' AND name_prc IN ({','.join([f"'{procedure}'" for procedure in procedures])})'''
+    sql += " ORDER BY name_prc"
+    rows=pgdb.select(sql)
+
+    return len(rows)
+
 def BuildOfferingList(pgdb,sosConfig):
     list=[]
     sql = "SELECT distinct(name_off) FROM %s.offerings" %(sosConfig.schema,)
     rows=pgdb.select(sql)
     for row in rows:
         list.append(row["name_off"])
-
     return list
 
 
@@ -1424,10 +1432,10 @@ class GetObservationResponse:
             raise sosException.SOSException("InvalidParameterValue","offering","Parameter \"offering\" sent with invalid value: %s -  available options for offering are %s" %(filter.offering,off_list))
         """
         if filter.procedure:
-            pl = BuildProcedureList(pgdb, filter.offering, filter.sosConfig)
-            for p in filter.procedure:
-                if not p in pl:
-                    raise sosException.SOSException("InvalidParameterValue","procedure","Parameter \"procedure\" sent with invalid value: %s -  available options for offering \"%s\": %s"%(p,filter.offering,pl))
+            # IGRAC SPECIFIED
+            pl = BuildProcedureCount(pgdb, filter.offering, filter.procedure, filter.sosConfig)
+            if not pl:
+                raise sosException.SOSException("InvalidParameterValue","procedure","Parameter \"procedure\" sent with invalid value")
 
         if filter.featureOfInterest:
             fl = BuildfeatureOfInterestList(pgdb,filter.offering, filter.sosConfig)
@@ -1481,27 +1489,15 @@ class GetObservationResponse:
 
         # BUILD PROCEDURES LIST
         #  select part of query
-        sqlSel = "SELECT DISTINCT"
-        sqlSel += " id_prc, name_prc, name_oty, stime_prc, etime_prc, time_res_prc"
+        sqlSel = "SELECT DISTINCT id_prc, name_prc, concat('insitu-fixed-point','') as name_oty, stime_prc, etime_prc, null as time_res_prc"
 
         #  from part of query
-        sqlFrom = "FROM %s.procedures, %s.proc_obs p, %s.observed_properties, %s.uoms," %(filter.sosConfig.schema,filter.sosConfig.schema,filter.sosConfig.schema,filter.sosConfig.schema)
-        sqlFrom += " %s.off_proc o, %s.offerings, %s.obs_type" %(filter.sosConfig.schema,filter.sosConfig.schema,filter.sosConfig.schema)
-        if filter.featureOfInterest or filter.featureOfInterestSpatial:
-            sqlFrom += " ,%s.foi, %s.feature_type" %(filter.sosConfig.schema,filter.sosConfig.schema)
-
-        sqlWhere = "WHERE id_prc=p.id_prc_fk AND id_opr_fk=id_opr AND o.id_prc_fk=id_prc AND id_off_fk=id_off AND id_uom=id_uom_fk AND id_oty=id_oty_fk"
-        sqlWhere += " AND name_off='%s'" %(filter.offering)
-
-        #  where condition based on featureOfInterest
-        if filter.featureOfInterest:
-            sqlWhere += " AND id_foi=id_foi_fk AND id_fty=id_fty_fk AND (name_foi IN (%s))" %(",".join( [ "'"+f+"'" for f in filter.featureOfInterest.split(",")]))
-        if filter.featureOfInterestSpatial:
-            sqlWhere += " AND id_foi_fk=id_foi AND %s" %(filter.featureOfInterestSpatial)
+        sqlFrom = "FROM istsos.observed_properties_sensor"
+        sqlWhere = "WHERE "
 
         #  where condition based on procedures
         if filter.procedure:
-            sqlWhere += " AND ("
+            sqlWhere += " ("
             procWhere = []
             for proc in filter.procedure:
                 procWhere.append("name_prc='%s'" %(proc))
@@ -1509,7 +1505,9 @@ class GetObservationResponse:
             sqlWhere += ")"
 
         #  where condition based on observed properties
-        sqlWhere += " AND ("
+        if sqlWhere != 'WHERE':
+            sqlWhere += " AND "
+        sqlWhere += " ("
         obsprWhere = []
         for obs in opr_filtered:
             obsprWhere.append("def_opr='%s'" %(obs["def_opr"]))
