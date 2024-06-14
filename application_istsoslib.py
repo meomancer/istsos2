@@ -58,11 +58,11 @@ def executeSos(environ, start_response):
             sys.path.insert(0, sosConfig.istsos_librarypath)
 
         pgdb = sosDatabase.PgDB(
-            os.environ["GEONODE_DATABASE_USER"],
-            os.environ["GEONODE_DATABASE_PASSWORD"],
-            os.environ["GWML2_DATABASE"],
-            os.environ["GEONODE_DATABASE_HOST"],
-            os.environ["GEONODE_DATABASE_PORT"]
+            os.environ["GROUNDWATER_DATABASE_USER"],
+            os.environ["GROUNDWATER_DATABASE_PASSWORD"],
+            os.environ["GROUNDWATER_DATABASE"],
+            os.environ["GROUNDWATER_DATABASE_HOST"],
+            os.environ["GROUNDWATER_DATABASE_PORT"]
         )
 
         req_filter = FF.sosFactoryFilter(environ, sosConfig)
